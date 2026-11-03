@@ -1,4 +1,6 @@
 # Local secrets and host-specific deployment credentials
+iot.aitalim.com/
+scripts/
 iot.aitalim.com/iot.aitalim.com/iot_config.json
 iot.aitalim.com/iot.aitalim.com/deploy.ps1
 iot.aitalim.com/iot.aitalim.com/api/error_log
