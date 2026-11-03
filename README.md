@@ -4,7 +4,7 @@
 
 **A cloud-connected environmental monitoring dashboard for air quality, GPS-enabled vehicles, and moss-water-tank systems.**
 
-![ESP32 hardware wiring diagram](cloudflare/public/circuit_diagram.png)
+![AITALIM IoT hardware setup](cloudflare/public/circuit_diagram.png)
 
 ## Live app
 
@@ -32,11 +32,19 @@ ESP32 devices ── HTTPS JSON ──> Cloudflare Worker ──> Cloudflare D1
 
 The deployed Worker serves the dashboard, implements the REST API, and persists readings in Cloudflare D1. It is available on a stable `workers.dev` address without a custom-domain renewal.
 
-## Demo
+## Dashboard preview
 
-[Download the hardware demo video](docs/demo.mp4)
+The live dashboard is designed around five focused workspaces:
 
-The video shows the ESP32 environmental-monitoring hardware wiring used by the project.
+| Workspace | What it provides |
+| --- | --- |
+| Dashboard | Live sensor status, quality indicators, and historical charts. |
+| Devices | Device registration, device health, and per-device configuration. |
+| Map | GPS device locations and tracker selection. |
+| Settings | Administrator controls, notification settings, and generated firmware configuration. |
+| Product | Sensor specifications, ESP32 wiring, communication protocols, calibration, and AQI guidance. |
+
+The hardware image above is the real ESP32 air-quality-monitor wiring used by the project. Open the [live dashboard](https://aitalim-iot.aashish1023.workers.dev) to explore the interactive interface.
 
 ## Repository layout
 
@@ -49,7 +57,6 @@ smart_carbon_monitor_FINAL/
   air_quality_monitior.ino
   moss.ino
   gps_tracker/       ESP32 firmware
-docs/demo.mp4        Hardware demo video
 ```
 
 ## Firmware setup
