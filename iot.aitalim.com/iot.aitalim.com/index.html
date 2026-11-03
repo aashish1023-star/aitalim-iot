@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="description"
+    content="AITALIM IoT — Smart monitoring dashboard for Air Quality, GPS Tracking, and Moss Water Tank systems.">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AITALIM IoT — Smart Monitor</title>
+  <link rel="stylesheet" href="/css/style.css?v=2.1.1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    if (localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  </script>
+</head>
+
+<body class="login-active no-scroll">
+
+  <!-- ═══════════════════ LOGIN PAGE ═══════════════════ -->
+  <div id="login-page" class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+          style="color:var(--accent2)">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
+        </svg>
+        <h1>AITALIM IoT</h1>
+        <p>Smart Environmental Monitoring</p>
+      </div>
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="Enter username..." autocomplete="username" autofocus>
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+      <div class="error-msg" id="login-error"></div>
+      <button class="btn btn-primary btn-block mt-16" id="btn-login" onclick="APP.doLogin()">
+        Sign In
+      </button>
+      <p class="text-center text-xs text-muted mt-16">Default: admin / admin</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TOP HEADER ═══════════════════ -->
+  <header class="top-header" id="top-header" style="display:none">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#g1)" stroke-width="2">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="24" y2="24">
+            <stop stop-color="#6366f1" />
+            <stop offset="1" stop-color="#8b5cf6" />
+          </linearGradient>
+        </defs>
+        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+        <path d="M2 17l10 5 10-5" />
+        <path d="M2 12l10 5 10-5" />
+      </svg>
+      AITALIM IoT
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="APP.toggleTheme()" title="Toggle theme" id="theme-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      </button>
+      <button class="header-btn" onclick="APP.logout()" title="Logout" id="logout-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ BOTTOM NAV ═══════════════════ -->
+  <nav class="bottom-nav" id="bottom-nav" style="display:none">
+    <button class="nav-item active" data-page="dashboard" onclick="APP.navigate('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+      Dashboard
+    </button>
+    <button class="nav-item" data-page="devices" onclick="APP.navigate('devices')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="20" height="14" rx="2" />
+        <path d="M8 21h8M12 17v4" />
+      </svg>
+      Devices
+    </button>
+    <button class="nav-item" data-page="map" onclick="APP.navigate('map')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+      Map
+    </button>
+    <button class="nav-item" data-page="settings" onclick="APP.navigate('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+      Settings
+    </button>
+    <button class="nav-item" data-page="product" onclick="APP.navigate('product')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
+        <polyline points="10 9 9 9 8 9" />
+      </svg>
+      Product
+    </button>
+  </nav>
+
+  <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+  <main class="content" id="main-content" style="display:none">
+
+    <!-- ──── DASHBOARD ──── -->
+    <section class="page-section active" id="page-dashboard">
+      <div class="page-title">Dashboard</div>
+      <div class="page-subtitle">Real-time sensor monitoring</div>
+
+      <!-- Device selector -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Active Device</span>
+          <span class="card-badge badge-accent" id="dash-device-type">—</span>
+        </div>
+        <select id="dash-device-select" onchange="APP.switchDevice(this.value)" style="font-weight:600">
+          <option value="">— Select a device —</option>
+        </select>
+      </div>
+
+      <!-- Empty state -->
+      <div id="dash-empty" class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" />
+        </svg>
+        <p>No device selected. Choose a device above or add one from the Devices tab.</p>
+      </div>
+
+      <!-- Live data (hidden until device selected) -->
+      <div id="dash-live" class="hidden">
+        <!-- Sensor Tiles -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Live Readings</span>
+            <span id="dash-online-badge" class="card-badge badge-red"><span class="dot off"></span> Offline</span>
+          </div>
+          <div class="sensor-grid wide" id="sensor-grid"></div>
+        </div>
+
+        <!-- Controls (for moss_water_tank) -->
+        <div class="card hidden" id="controls-card">
+          <div class="card-header">
+            <span class="card-title">Controls</span>
+          </div>
+          <div id="controls-container"></div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Trend</span>
+            <select id="trend-param-select" onchange="APP.updateTrendChartSelection(this.value)" style="width:auto;max-width:180px;font-size:12px;padding:4px 8px;border-radius:6px;background:var(--glass);color:var(--text)">
+              <!-- Options dynamically filled based on active device type -->
+            </select>
+          </div>
+          <div class="chart-container">
+            <canvas id="trend-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Data Logs -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Recent Data</span>
+            <button class="btn btn-sm" onclick="APP.downloadCSV()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              CSV
+            </button>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr id="table-head"></tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Alert Log (for moss_water_tank) -->
+        <div class="card hidden" id="alerts-card">
+          <div class="card-header">
+            <span class="card-title">📧 Alert Log</span>
+            <span class="card-badge badge-amber" id="alert-count">0</span>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody id="alerts-body"></tbody>
+            </table>
+          </div>
+          <p class="text-xs text-muted mt-8">Email alerts are sent to the configured notification address (max once per hour per device).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──── DEVICES ──── -->
+    <section class="page-section" id="page-devices">
+      <div class="page-title">Devices</div>
+      <div class="page-subtitle">Manage your IoT fleet</div>
+
+      <!-- Add new device -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Register New Device</span>
+        </div>
+        <label>Device ID</label>
+        <input type="text" id="add-id" placeholder="e.g. air_sensor_01" pattern="[a-zA-Z0-9_]+">
+        <label>Friendly Name</label>
+        <input type="text" id="add-name" placeholder="e.g. Office Air Monitor">
+        <label>Device Type</label>
+        <select id="add-type" onchange="APP.onTypeChange()">
+          <option value="air_quality">🌬️ Air Quality Monitor</option>
+          <option value="gps_tracker">📍 GPS Tracker</option>
+          <option value="moss_water_tank">☀️ Smart Hybrid Solar Dryer</option>
+        </select>
+        <p class="text-xs text-muted mt-8" id="type-desc"></p>
+
+        <!-- GPS Tracker preselected fields -->
+        <div id="gps-extra-fields" style="display:none">
+          <label>Vehicle Category</label>
+          <select id="add-vehicle-category" onchange="APP.onVehicleCategoryChange()">
+            <option value="2-wheeler">🏍️ Two-Wheeler</option>
+            <option value="4-wheeler" selected>🚗 Four-Wheeler</option>
+          </select>
+          <label>Vehicle Type</label>
+          <select id="add-vehicle-type">
+            <option value="car" selected>Sedan / Hatchback</option>
+            <option value="suv">SUV / Jeep</option>
+            <option value="bus">Bus</option>
+            <option value="truck">Truck / Heavy Vehicle</option>
+          </select>
+          <label>Fuel Type</label>
+          <select id="add-fuel-type">
+            <option value="petrol" selected>Petrol (Gasoline)</option>
+            <option value="diesel">Diesel</option>
+            <option value="cng">CNG</option>
+            <option value="electric">Electric</option>
+          </select>
+          <label>Last Service Date</label>
+          <input type="date" id="add-service-date">
+          <label>Last Service Mileage (km)</label>
+          <input type="number" id="add-service-mileage" placeholder="e.g. 15000" min="0">
+        </div>
+
+        <!-- Dryer Node threshold fields -->
+        <div id="moss-extra-fields" style="display:none">
+          <label>Target Temperature Limit (°C)</label>
+          <input type="number" id="add-temp-limit" placeholder="e.g. 30" value="30" min="10" max="60">
+          <label>Target Humidity Limit (%)</label>
+          <input type="number" id="add-hum-limit" placeholder="e.g. 40" value="40" min="10" max="95">
+        </div>
+        <label>Location</label>
+        <input type="text" id="add-location" placeholder="e.g. Building A, Floor 2">
+        <div class="error-msg" id="add-error"></div>
+        <button class="btn btn-primary btn-block mt-16" onclick="APP.addDevice()">
+          + Register Device
+        </button>
+      </div>
+
+      <!-- Device list -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Registered Devices</span>
+          <span class="card-badge badge-accent" id="device-count">0</span>
+        </div>
+        <div id="device-list"></div>
+      </div>
+    </section>
+
+    <!-- ──── MAP ──── -->
+    <section class="page-section" id="page-map">
+      <div class="page-title">Live Map</div>
+      <div class="page-subtitle">GPS tracker locations</div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">GPS Devices</span>
+          <select id="map-device-select" onchange="APP.switchMapDevice(this.value)"
+            style="width:auto;max-width:200px;font-size:12px;padding:6px 10px">
+            <option value="">All GPS Trackers</option>
+          </select>
+        </div>
+        <div id="map-container"></div>
+        <div id="map-empty" class="text-center text-sm text-muted mt-16" style="display:none">
+          No GPS devices registered. Add a GPS Tracker from the Devices tab.
+        </div>
+      </div>
+    </section>
+
+    <!-- ──── SETTINGS ──── -->
+    <section class="page-section" id="page-settings">
+      <div class="page-title">Settings</div>
+      <div class="page-subtitle">App configuration</div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Appearance</span></div>
+        <div class="status-row">
+          <span class="status-label">Dark Mode</span>
+          <div class="toggle on" id="theme-toggle" onclick="APP.toggleTheme()"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">📧 Alerts & Email Config</span></div>
+        <label>Notification Email</label>
+        <input type="email" id="settings-email" placeholder="e.g. admin@swachhyabasti.com">
+        <label>WiFi SSID</label>
+        <input type="text" id="settings-wifi-ssid" placeholder="e.g. HARDWARE-HACKATHON-2">
+        <label>WiFi Password</label>
+        <input type="text" id="settings-wifi-pass" placeholder="e.g. 0123456789">
+        <button class="btn btn-primary btn-block mt-16" onclick="APP.saveSettings()">
+          💾 Save Configuration
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">System Info</span></div>
+        <div class="status-row"><span class="status-label">Server</span><span class="status-value">swachhyabasti.com</span></div>
+        <div class="status-row"><span class="status-label">Version</span><span class="status-value">2.0.0</span></div>
+        <div class="status-row"><span class="status-label">Devices</span><span class="status-value"
+            id="settings-device-count">0</span></div>
+      </div>
+
+      <div class="card danger-zone">
+        <div class="card-header"><span class="card-title" style="color:var(--red)">⚠ Danger Zone</span></div>
+        <p class="text-sm text-muted mb-16">Reset will delete all devices and sensor data permanently.</p>
+        <button class="btn btn-danger btn-block" onclick="APP.resetDatabase()">Initialize & Reset Database</button>
+      </div>
+
+      <button class="btn btn-block mt-16" onclick="APP.logout()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+        </svg>
+        Sign Out
+      </button>
+    </section>
+
+    <!-- ──── PRODUCT DOCUMENTATION ──── -->
+    <section class="page-section" id="page-product">
+      <div class="page-title">Product Documentation</div>
+      <div class="page-subtitle">Smart Air Quality & Carbon Monitor — Technical Reference</div>
+
+      <!-- Hero Overview -->
+      <div class="card product-hero">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <div style="font-size:48px;line-height:1">🌬️</div>
+          <div>
+            <h2 style="margin:0;font-size:20px;font-weight:700;color:var(--text)">Office Air Quality Monitor</h2>
+            <p style="margin:4px 0 0;font-size:13px;color:var(--text2)">Real-time Indoor Air Quality Monitoring System</p>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7;margin:0">
+          The <strong style="color:var(--text)">Smart Air Quality & Carbon Monitor</strong> is an IoT-based environmental monitoring
+          system designed for offices, schools, and indoor spaces. It continuously measures <strong style="color:var(--accent2)">particulate matter
+          (PM1.0, PM2.5, PM4.0, PM10)</strong>, <strong style="color:var(--green)">carbon dioxide concentration (CO₂)</strong>, and
+          <strong style="color:var(--amber)">temperature & humidity</strong> in real-time.
+          Data is transmitted wirelessly to a cloud dashboard over <strong style="color:var(--text)">Wi-Fi using HTTPS</strong>,
+          enabling remote monitoring, AQI calculation per EPA standards, and historical trend analysis.
+        </p>
+      </div>
+
+      <!-- Component Specifications -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🔧 Component Specifications</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table product-table">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Model</th>
+                <th>Function</th>
+                <th>Operating Voltage</th>
+                <th>Communication</th>
+                <th>Key Specs</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Microcontroller</strong></td>
+                <td>ESP32-WROOM-32<br><span class="text-xs text-muted">30-pin DevKit V1</span></td>
+                <td>Main processor, Wi-Fi connectivity, sensor data aggregation</td>
+                <td>3.3V logic<br>5V via VIN</td>
+                <td>Wi-Fi 802.11 b/g/n<br>3× UART, SPI, I²C</td>
+                <td>Dual-core 240MHz, 520KB SRAM, 4MB Flash, BLE 4.2</td>
+              </tr>
+              <tr>
+                <td><strong>PM Sensor</strong></td>
+                <td>Sensirion SPS30<br><span class="text-xs text-muted">Laser Scattering</span></td>
+                <td>Particulate matter measurement (PM1.0, PM2.5, PM4.0, PM10)</td>
+                <td>5V ± 10%<br>(4.5V – 5.5V)</td>
+                <td>UART (115200 baud)<br>or I²C</td>
+                <td>Range: 0–1000 µg/m³<br>Accuracy: ±(5 µg/m³ + 5%)<br>Lifetime: >8 years</td>
+              </tr>
+              <tr>
+                <td><strong>CO₂ Sensor</strong></td>
+                <td>CO2-C8 NDIR<br><span class="text-xs text-muted">Non-Dispersive Infrared</span></td>
+                <td>Carbon dioxide concentration measurement</td>
+                <td>5V ± 0.1V</td>
+                <td>UART (9600 baud)<br>+ PWM output</td>
+                <td>Range: 400–5000 ppm<br>Accuracy: ±50ppm ± 3%<br>Resolution: 1 ppm</td>
+              </tr>
+              <tr>
+                <td><strong>Temp/Humidity</strong></td>
+                <td>DHT22 (AM2302)<br><span class="text-xs text-muted">3-pin module</span></td>
+                <td>Ambient temperature and relative humidity</td>
+                <td>3.3V – 5V<br>(powered by 3V3)</td>
+                <td>One-Wire Digital<br>(proprietary protocol)</td>
+                <td>Temp: -40–80°C ±0.5°C<br>RH: 0–100% ±2–5%<br>10kΩ pull-up required</td>
+              </tr>
+              <tr>
+                <td><strong>Power Supply</strong></td>
+                <td>LM2596 Module<br><span class="text-xs text-muted">DC-DC Buck Converter</span></td>
+                <td>Voltage regulation from input source to 5V DC</td>
+                <td>Input: 4.5V – 40V<br>Output: 5V (adj.)</td>
+                <td>N/A</td>
+                <td>Max Current: 3A<br>Efficiency: ~92%<br>Switching: 150kHz</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Circuit Diagram -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">⚡ Circuit Diagram & Wiring</span>
+        </div>
+        <div class="circuit-diagram">
+          <img src="circuit_diagram.png" alt="Circuit Diagram" style="width:100%; height:auto; max-height:500px; border-radius: 8px; object-fit: contain;">
+        </div>
+      </div>
+
+      <!-- GPIO Pin Configuration -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📌 GPIO Pin Configuration</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table product-table">
+            <thead>
+              <tr>
+                <th>ESP32 Pin</th>
+                <th>Direction</th>
+                <th>Connected To</th>
+                <th>Protocol</th>
+                <th>Baud Rate</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong style="color:#93c5fd">GPIO 16</strong></td>
+                <td>RX ←</td>
+                <td>SPS30 TX pin</td>
+                <td>UART2</td>
+                <td>115200</td>
+                <td>Receives PM data frames</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#86efac">GPIO 17</strong></td>
+                <td>TX →</td>
+                <td>SPS30 RX pin</td>
+                <td>UART2</td>
+                <td>115200</td>
+                <td>Sends measurement commands</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#93c5fd">GPIO 26</strong></td>
+                <td>RX ←</td>
+                <td>CO2-C8 TX pin</td>
+                <td>UART1</td>
+                <td>9600</td>
+                <td>Receives 14-byte CO₂ frames</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#86efac">GPIO 27</strong></td>
+                <td>TX →</td>
+                <td>CO2-C8 RX pin</td>
+                <td>UART1</td>
+                <td>9600</td>
+                <td>Sends 5-byte query command</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#fde047">GPIO 4</strong></td>
+                <td>DATA ↔</td>
+                <td>DHT22 Data pin</td>
+                <td>One-Wire</td>
+                <td>N/A</td>
+                <td>10kΩ pull-up to 3.3V required</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#fca5a5">VIN</strong></td>
+                <td>PWR</td>
+                <td>LM2596 Output</td>
+                <td>—</td>
+                <td>—</td>
+                <td>5V input powers ESP32 + sensors</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#fdba74">3V3</strong></td>
+                <td>PWR OUT</td>
+                <td>DHT22 VCC</td>
+                <td>—</td>
+                <td>—</td>
+                <td>3.3V regulated from ESP32 LDO</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#94a3b8">GND</strong></td>
+                <td>GND</td>
+                <td>All sensors + LM2596</td>
+                <td>—</td>
+                <td>—</td>
+                <td>Common ground reference</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Communication Protocols -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📡 Communication Protocols</span>
+        </div>
+        <div class="product-protocols">
+          <div class="protocol-card">
+            <div class="protocol-icon" style="background:rgba(99,102,241,0.15);color:#818cf8">UART</div>
+            <div class="protocol-detail">
+              <strong>Sensor ↔ ESP32</strong>
+              <p>UART (Universal Asynchronous Receiver-Transmitter) is used for serial communication between all sensors and the ESP32.
+                The SPS30 runs on <strong>UART2 at 115200 baud</strong> for high-speed PM data transfer,
+                while the CO2-C8 uses <strong>UART1 at 9600 baud</strong> with a custom Modbus-like query/response protocol
+                (5-byte command, 14-byte response with CRC16 checksum).</p>
+            </div>
+          </div>
+          <div class="protocol-card">
+            <div class="protocol-icon" style="background:rgba(34,197,94,0.15);color:#4ade80">HTTPS</div>
+            <div class="protocol-detail">
+              <strong>ESP32 → Cloud Server</strong>
+              <p>Sensor data is serialized into <strong>JSON</strong> format and transmitted to the AITALIM IoT Dashboard via
+                <strong>HTTPS POST</strong> requests over Wi-Fi (802.11 b/g/n). The ESP32 uses WiFiClientSecure with
+                TLS encryption. Data is posted to <code>/api/data.php?device_id=air_quality_node_01</code>
+                every 5 seconds.</p>
+            </div>
+          </div>
+          <div class="protocol-card">
+            <div class="protocol-icon" style="background:rgba(245,158,11,0.15);color:#fbbf24">JSON</div>
+            <div class="protocol-detail">
+              <strong>Data Payload Format</strong>
+              <p>Each transmission contains calibrated readings in a compact JSON payload:</p>
+              <code class="code-inline">{"pm1_0":12.5, "pm2_5":18.3, "pm4_0":22.1, "pm10":25.7, "co2_ppm":485, "temperature":24.3, "humidity":55.2}</code>
+            </div>
+          </div>
+          <div class="protocol-card">
+            <div class="protocol-icon" style="background:rgba(239,68,68,0.15);color:#f87171">1-Wire</div>
+            <div class="protocol-detail">
+              <strong>DHT22 → ESP32</strong>
+              <p>The DHT22 uses a proprietary single-wire digital protocol on GPIO 4. A 10kΩ pull-up resistor between VCC (3.3V) and the
+                DATA pin is required. The ESP32 sends a start signal (pull low for 1ms), then the DHT22 responds with 40 bits
+                (16-bit humidity + 16-bit temperature + 8-bit checksum).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Architecture -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🏗️ System Architecture</span>
+        </div>
+        <div class="circuit-diagram">
+          <svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;max-height:400px">
+            <!-- Sensor Layer -->
+            <text x="80" y="25" fill="#94a3b8" font-size="10" font-weight="600">SENSOR LAYER</text>
+            <rect x="20" y="35" width="120" height="55" rx="8" fill="rgba(168,85,247,0.12)" stroke="#a855f7" stroke-width="1.5"/>
+            <text x="80" y="55" text-anchor="middle" fill="#c084fc" font-size="10" font-weight="600">SPS30</text>
+            <text x="80" y="70" text-anchor="middle" fill="#a78bfa" font-size="8">PM1.0/2.5/4.0/10</text>
+            <text x="80" y="82" text-anchor="middle" fill="#7c3aed" font-size="7">UART2 · 115200</text>
+            
+            <rect x="160" y="35" width="120" height="55" rx="8" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="220" y="55" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">CO2-C8</text>
+            <text x="220" y="70" text-anchor="middle" fill="#fde68a" font-size="8">CO₂ (400-5000ppm)</text>
+            <text x="220" y="82" text-anchor="middle" fill="#d97706" font-size="7">UART1 · 9600</text>
+            
+            <rect x="300" y="35" width="120" height="55" rx="8" fill="rgba(34,197,94,0.12)" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="360" y="55" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="600">DHT22</text>
+            <text x="360" y="70" text-anchor="middle" fill="#86efac" font-size="8">Temp & Humidity</text>
+            <text x="360" y="82" text-anchor="middle" fill="#16a34a" font-size="7">GPIO 4 · 1-Wire</text>
+
+            <!-- Arrows to ESP32 -->
+            <line x1="80" y1="90" x2="80" y2="120" stroke="#a855f7" stroke-width="1.5" marker-end="url(#arrowP)"/>
+            <line x1="220" y1="90" x2="220" y2="120" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrowA)"/>
+            <line x1="360" y1="90" x2="360" y2="120" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrowG)"/>
+            <defs>
+              <marker id="arrowP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/></marker>
+              <marker id="arrowA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+              <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e"/></marker>
+              <marker id="arrowB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6366f1"/></marker>
+              <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/></marker>
+            </defs>
+
+            <!-- Processing Layer -->
+            <text x="260" y="117" fill="#94a3b8" font-size="10" font-weight="600">PROCESSING LAYER</text>
+            <rect x="50" y="125" width="380" height="80" rx="10" fill="rgba(99,102,241,0.1)" stroke="#6366f1" stroke-width="2"/>
+            <text x="240" y="148" text-anchor="middle" fill="#a5b4fc" font-size="12" font-weight="700">ESP32-WROOM-32</text>
+            
+            <rect x="65" y="158" width="85" height="35" rx="5" fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.3)" stroke-width="1"/>
+            <text x="107" y="174" text-anchor="middle" fill="#c084fc" font-size="8" font-weight="600">EMA Filter</text>
+            <text x="107" y="185" text-anchor="middle" fill="#a78bfa" font-size="7">α = 0.3</text>
+            
+            <rect x="165" y="158" width="85" height="35" rx="5" fill="rgba(34,197,94,0.15)" stroke="rgba(34,197,94,0.3)" stroke-width="1"/>
+            <text x="207" y="174" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600">Humidity</text>
+            <text x="207" y="185" text-anchor="middle" fill="#86efac" font-size="7">Compensation</text>
+            
+            <rect x="265" y="158" width="85" height="35" rx="5" fill="rgba(245,158,11,0.15)" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
+            <text x="307" y="174" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="600">Range</text>
+            <text x="307" y="185" text-anchor="middle" fill="#fde68a" font-size="7">Validation</text>
+            
+            <rect x="360" y="158" width="55" height="35" rx="5" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.3)" stroke-width="1"/>
+            <text x="387" y="174" text-anchor="middle" fill="#818cf8" font-size="8" font-weight="600">JSON</text>
+            <text x="387" y="185" text-anchor="middle" fill="#a5b4fc" font-size="7">Serialize</text>
+
+            <!-- Wi-Fi Arrow -->
+            <line x1="430" y1="165" x2="490" y2="165" stroke="#6366f1" stroke-width="2" marker-end="url(#arrowB)"/>
+            <text x="460" y="158" text-anchor="middle" fill="#818cf8" font-size="8">Wi-Fi</text>
+            <text x="460" y="180" text-anchor="middle" fill="#6366f1" font-size="7">HTTPS POST</text>
+
+            <!-- Cloud Layer -->
+            <text x="600" y="117" fill="#94a3b8" font-size="10" font-weight="600">CLOUD LAYER</text>
+            <rect x="495" y="125" width="285" height="80" rx="10" fill="rgba(99,102,241,0.08)" stroke="#4f46e5" stroke-width="2" stroke-dasharray="6,3"/>
+            <text x="637" y="148" text-anchor="middle" fill="#a5b4fc" font-size="11" font-weight="700">iot.aitalim.com</text>
+            
+            <rect x="510" y="158" width="70" height="35" rx="5" fill="rgba(239,68,68,0.12)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
+            <text x="545" y="174" text-anchor="middle" fill="#f87171" font-size="8" font-weight="600">PHP API</text>
+            <text x="545" y="185" text-anchor="middle" fill="#fca5a5" font-size="7">data.php</text>
+            
+            <rect x="590" y="158" width="70" height="35" rx="5" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.3)" stroke-width="1"/>
+            <text x="625" y="174" text-anchor="middle" fill="#60a5fa" font-size="8" font-weight="600">MySQL</text>
+            <text x="625" y="185" text-anchor="middle" fill="#93c5fd" font-size="7">Database</text>
+            
+            <rect x="670" y="158" width="95" height="35" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.3)" stroke-width="1"/>
+            <text x="717" y="174" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600">AQI Engine</text>
+            <text x="717" y="185" text-anchor="middle" fill="#86efac" font-size="7">EPA Breakpoints</text>
+
+            <!-- User Layer -->
+            <line x1="637" y1="205" x2="637" y2="240" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrowB)"/>
+            <text x="720" y="237" fill="#94a3b8" font-size="10" font-weight="600">PRESENTATION LAYER</text>
+            <rect x="495" y="245" width="285" height="80" rx="10" fill="rgba(34,197,94,0.06)" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="637" y="268" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="700">Web Dashboard (SPA)</text>
+            
+            <rect x="510" y="278" width="60" height="35" rx="5" fill="rgba(99,102,241,0.1)" stroke="rgba(99,102,241,0.2)" stroke-width="1"/>
+            <text x="540" y="294" text-anchor="middle" fill="#818cf8" font-size="8" font-weight="600">Live Tiles</text>
+            <text x="540" y="305" text-anchor="middle" fill="#a5b4fc" font-size="7">Real-time</text>
+            
+            <rect x="580" y="278" width="60" height="35" rx="5" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.2)" stroke-width="1"/>
+            <text x="610" y="294" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="600">AQI</text>
+            <text x="610" y="305" text-anchor="middle" fill="#fde68a" font-size="7">Color-coded</text>
+            
+            <rect x="650" y="278" width="60" height="35" rx="5" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.2)" stroke-width="1"/>
+            <text x="680" y="294" text-anchor="middle" fill="#c084fc" font-size="8" font-weight="600">Trends</text>
+            <text x="680" y="305" text-anchor="middle" fill="#d8b4fe" font-size="7">Chart.js</text>
+            
+            <rect x="720" y="278" width="50" height="35" rx="5" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.2)" stroke-width="1"/>
+            <text x="745" y="294" text-anchor="middle" fill="#f87171" font-size="8" font-weight="600">CSV</text>
+            <text x="745" y="305" text-anchor="middle" fill="#fca5a5" font-size="7">Export</text>
+
+            <!-- Power Layer -->
+            <rect x="20" y="240" width="400" height="50" rx="8" fill="rgba(239,68,68,0.06)" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,2"/>
+            <text x="40" y="258" fill="#ef4444" font-size="9" font-weight="600">⚡ POWER</text>
+            <text x="40" y="275" fill="#fca5a5" font-size="8">LM2596 (7-12V DC input) → 5V regulated → ESP32 VIN, SPS30, CO2-C8  |  ESP32 3V3 LDO → DHT22</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Data Processing Pipeline -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🔬 Calibration & Data Processing</span>
+        </div>
+        <div class="product-protocols">
+          <div class="protocol-card">
+            <div class="protocol-icon" style="background:rgba(168,85,247,0.15);color:#c084fc">1</div>
+            <div class="protocol-detail">
+              <strong>30-Second Warm-up (SPS30)</strong>
+              <p>Per the Sensirion datasheet, the SPS30 requires a minimum 30-second warm-up after power-on before readings are reliable.
+                All PM readings during this period are discarded. A fan cleaning cycle also runs at startup to clear condensation from optics.</p>
+            </div>
+          </div>
+          <div class="protocol-card">
+            <div class="protocol-icon" style="background:rgba(34,197,94,0.15);color:#4ade80">2</div>
+            <div class="protocol-detail">
+              <strong>Hänel Humidity Compensation</strong>
+              <p>The SPS30 has no built-in humidity correction. When RH exceeds 75%, water condenses on particles causing them to swell,
+                inflating readings. We apply the Hänel hygroscopic growth correction:<br>
+                <code class="code-inline">corrected = raw / (1 + 0.24 × RH / (100 − RH))</code></p>
+            </div>
+          </div>
+          <div class="protocol-card">
+            <div class="protocol-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa">3</div>
+            <div class="protocol-detail">
+              <strong>Physical Constraint Enforcement</strong>
+              <p>PM values are cumulative: PM10 ≥ PM4.0 ≥ PM2.5 ≥ PM1.0 must always hold. If the sensor returns a smaller bin with
+                a higher value (measurement artifact), the ordering is corrected. Values are clamped to the 0–1000 µg/m³ measurable range.</p>
+            </div>
+          </div>
+          <div class="protocol-card">
+            <div class="protocol-icon" style="background:rgba(245,158,11,0.15);color:#fbbf24">4</div>
+            <div class="protocol-detail">
+              <strong>EMA Smoothing (α = 0.3)</strong>
+              <p>An Exponential Moving Average filter is applied to all PM channels. With α=0.3, each new reading contributes 30% while
+                the previous smoothed value retains 70%, eliminating sensor jitter while still responding to real air quality changes within 5–7 readings.</p>
+            </div>
+          </div>
+          <div class="protocol-card">
+            <div class="protocol-icon" style="background:rgba(239,68,68,0.15);color:#f87171">5</div>
+            <div class="protocol-detail">
+              <strong>CO₂ Baseline Clamping (400 ppm)</strong>
+              <p>Per the CO2-C8 datasheet, the sensor range is 400–5000 ppm with ±50ppm ±3% accuracy.
+                Atmospheric CO₂ baseline is ~420 ppm; any reading below 400 is physically impossible and clamped.
+                Readings above 5000 are capped at the sensor's maximum.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AQI Standards -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📊 AQI Standards (US EPA)</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table product-table">
+            <thead>
+              <tr>
+                <th>AQI Range</th>
+                <th>Category</th>
+                <th>PM2.5 (µg/m³)</th>
+                <th>PM10 (µg/m³)</th>
+                <th>CO₂ (ppm)</th>
+                <th>Health Advisory</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-left:3px solid #22c55e">
+                <td><strong style="color:#22c55e">0 – 50</strong></td>
+                <td>😊 Good</td>
+                <td>0.0 – 9.0</td>
+                <td>0 – 54</td>
+                <td>0 – 800</td>
+                <td>Air quality is satisfactory</td>
+              </tr>
+              <tr style="border-left:3px solid #eab308">
+                <td><strong style="color:#eab308">51 – 100</strong></td>
+                <td>😐 Moderate</td>
+                <td>9.1 – 35.4</td>
+                <td>55 – 154</td>
+                <td>801 – 1000</td>
+                <td>Acceptable; sensitive groups reduce exertion</td>
+              </tr>
+              <tr style="border-left:3px solid #f97316">
+                <td><strong style="color:#f97316">101 – 150</strong></td>
+                <td>😷 USG</td>
+                <td>35.5 – 55.4</td>
+                <td>155 – 254</td>
+                <td>1001 – 1400</td>
+                <td>Sensitive individuals reduce outdoor activity</td>
+              </tr>
+              <tr style="border-left:3px solid #ef4444">
+                <td><strong style="color:#ef4444">151 – 200</strong></td>
+                <td>🤢 Unhealthy</td>
+                <td>55.5 – 125.4</td>
+                <td>255 – 354</td>
+                <td>1401 – 2000</td>
+                <td>Everyone may experience health effects</td>
+              </tr>
+              <tr style="border-left:3px solid #7c3aed">
+                <td><strong style="color:#7c3aed">201 – 300</strong></td>
+                <td>⚠️ Very Unhealthy</td>
+                <td>125.5 – 225.4</td>
+                <td>355 – 424</td>
+                <td>2001 – 5000</td>
+                <td>Health alert — avoid outdoor activity</td>
+              </tr>
+              <tr style="border-left:3px solid #991b1b">
+                <td><strong style="color:#991b1b">301 – 500</strong></td>
+                <td>☠️ Hazardous</td>
+                <td>225.5 – 500.4</td>
+                <td>425 – 604</td>
+                <td>>5000</td>
+                <td>EMERGENCY — avoid all outdoor exposure</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Key Features -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">✨ Key Features</span>
+        </div>
+        <div class="product-features">
+          <div class="feature-item">
+            <div class="feature-icon">📡</div>
+            <div><strong>Real-time Monitoring</strong><br><span class="text-muted">Live sensor data every 5 seconds via Wi-Fi HTTPS</span></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🎯</div>
+            <div><strong>Calibrated Accuracy</strong><br><span class="text-muted">Datasheet-based calibration with EMA filter & humidity compensation</span></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🌈</div>
+            <div><strong>EPA AQI Index</strong><br><span class="text-muted">Color-coded Air Quality Index with 6 health categories</span></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">📊</div>
+            <div><strong>Trend Analysis</strong><br><span class="text-muted">Interactive Chart.js graphs with selectable parameters</span></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">📥</div>
+            <div><strong>Data Export</strong><br><span class="text-muted">One-click CSV download for all historical sensor readings</span></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🌐</div>
+            <div><strong>Web Dashboard</strong><br><span class="text-muted">Responsive SPA accessible from any device with a browser</span></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🔒</div>
+            <div><strong>Secure Communication</strong><br><span class="text-muted">TLS-encrypted HTTPS with WiFiClientSecure</span></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">⚡</div>
+            <div><strong>Low Power</strong><br><span class="text-muted">LM2596 buck converter with 92% efficiency, runs on 7-12V DC</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Limitations & Engineering Considerations -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">⚠️ Limitations & Engineering Considerations</span>
+        </div>
+        <div class="product-protocols">
+          <div class="protocol-card" style="border-left: 4px solid var(--amber);">
+            <div class="protocol-icon" style="background:rgba(245,158,11,0.15);color:#fbbf24">⚡</div>
+            <div class="protocol-detail">
+              <strong>Power Consumption Constraints</strong>
+              <p>The system requires a constant 5V power source capable of delivering at least 1A. The SPS30 fan and CO2-C8 NDIR heating element draw significant current (up to 80mA and 150mA peak respectively). Battery operation is generally unfeasible for long-term continuous monitoring without a substantial lithium-ion pack or solar array.</p>
+            </div>
+          </div>
+          <div class="protocol-card" style="border-left: 4px solid var(--blue);">
+            <div class="protocol-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa">💤</div>
+            <div class="protocol-detail">
+              <strong>Sleep Mode Incompatibility</strong>
+              <p>While the ESP32 supports deep sleep to conserve energy, the SPS30 requires continuous power to run its auto-cleaning cycles, and the CO2-C8 requires extensive warm-up times. Constantly waking the sensors from sleep drastically degrades data quality and reduces the lifespan of the optical/heating components. Thus, the system is designed strictly for "always-on" mains power operation.</p>
+            </div>
+          </div>
+          <div class="protocol-card" style="border-left: 4px solid var(--purple);">
+            <div class="protocol-icon" style="background:rgba(168,85,247,0.15);color:#c084fc">🌡️</div>
+            <div class="protocol-detail">
+              <strong>Sensor Thermal Drift</strong>
+              <p>The ESP32-WROOM-32 can generate considerable heat when Wi-Fi is actively transmitting. If the DHT22 temperature sensor is placed too close to the ESP32 or the LM2596 converter in a closed enclosure, it will suffer from thermal drift, reading artificially high temperatures and causing the humidity to read artificially low. Proper ventilation and physical isolation in the chassis design is mandatory.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-center text-xs text-muted" style="padding:16px">Smart Air Quality Monitor — Hardware Hackathon 2026 · swachhyabasti</p>
+    </section>
+  </main>
+
+  <!-- ═══════════════════ CODE MODAL ═══════════════════ -->
+  <div class="modal-overlay" id="code-modal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="modal-title">Arduino Code</div>
+      <div class="code-block" id="modal-code"></div>
+      <div class="btn-group mt-16">
+        <button class="btn btn-primary" onclick="APP.copyCode()">📋 Copy</button>
+        <button class="btn" onclick="APP.downloadCode()">⬇ Download .ino</button>
+        <button class="btn" onclick="APP.closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/js/app.js?v=2.1.1"></script>
+  <footer style="text-align:center;padding:20px 16px;font-size:11px;color:var(--text3);opacity:0.7">
+    © 2026 swachhyabasti. All rights reserved.
+  </footer>
+</body>
+
+</html>

@@ -1,0 +1,13 @@
+name = "aitalim-iot"
+main = "cloudflare/worker.js"
+compatibility_date = "2026-11-03"
+
+[assets]
+directory = "./cloudflare/public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aitalim-iot"
+# Replace after running: npx wrangler d1 create aitalim-iot
+database_id = "f9be83ee-ef73-4d07-b154-f89ff2b7ec88"

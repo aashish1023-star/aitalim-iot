@@ -1,0 +1,49 @@
+RewriteEngine On
+RewriteBase /
+
+# Security
+Options -Indexes
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "DENY"
+
+# ESP32 API endpoints (must come first)
+RewriteRule ^data/([a-zA-Z0-9_]+)/?$ api/data.php?device_id=$1 [L,QSA]
+RewriteRule ^config/([a-zA-Z0-9_]+)/?$ api/device-config.php?device_id=$1 [L,QSA]
+
+# Static assets — don't rewrite
+RewriteCond %{REQUEST_URI} ^/(css|js|images|manifest\.json|sw\.js) [NC]
+RewriteRule ^ - [L]
+
+# API endpoints — don't rewrite
+RewriteCond %{REQUEST_URI} ^/api/ [NC]
+RewriteRule ^ - [L]
+
+# SPA catch-all: serve index.html for all non-file routes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
+
+# Block direct access to backend config files
+<Files "config.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Files>
+
+<Files "db.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Files>
+
+<Files "schema.sql">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Files>
+
+<Files "iot_config.json">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Files>
